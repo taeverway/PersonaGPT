@@ -1,54 +1,44 @@
+// everway_supabase_handler.js
 
-// everway-api/api/everway.js
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = 'https://icztlblnuviiyybjjbjp.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljenRsYmxudXZpaXl5YmpqYmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNDU0MjcsImV4cCI6MjA2NDgyMTQyN30.ANXf95ZoKu4TQWMOl46BsMu9IzvtkapWRPLIxsykEfQ';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
-  const allowedMethods = ['GET', 'POST', 'PUT', 'PATCH'];
-  if (!allowedMethods.includes(req.method)) {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  const { structure } = req.query;
+
+  if (!structure) {
+    return res.status(400).json({ error: 'Structure not specified' });
   }
 
-  // Simulated in-memory store (replace with DB or file write in production)
-  let store = global.everwayData || {
-    personas: [],
-    problems: [],
-    solutions: [],
-    environments: [],
-    products: [],
-    relationships: []
-  };
+  const table = structure.toLowerCase();
 
-  if (req.method === 'GET') {
-    return res.status(200).json(store);
-  }
-
-  const { type, data } = req.body;
-  if (!type || !store[type]) {
-    return res.status(400).json({ error: 'Invalid or missing type' });
-  }
-
-  if (req.method === 'POST') {
-    store[type].push(data);
-    global.everwayData = store;
-    return res.status(201).json({ success: true, added: data });
-  }
-
-  if (req.method === 'PUT') {
-    const index = store[type].findIndex(item => item.id === data.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Item not found' });
+  try {
+    if (req.method === 'GET') {
+      const { data, error } = await supabase.from(table).select('*');
+      if (error) throw error;
+      res.status(200).json(data);
+    } else if (req.method === 'POST') {
+      const { data, error } = await supabase.from(table).insert([req.body]).select();
+      if (error) throw error;
+      res.status(201).json(data[0]);
+    } else if (req.method === 'PUT') {
+      const { id, ...updateFields } = req.body;
+      const { data, error } = await supabase.from(table).update(updateFields).eq('id', id).select();
+      if (error) throw error;
+      res.status(200).json(data[0]);
+    } else if (req.method === 'DELETE') {
+      const { id } = req.query;
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) throw error;
+      res.status(204).end();
+    } else {
+      res.status(405).json({ error: 'Method not allowed' });
     }
-    store[type][index] = data;
-    global.everwayData = store;
-    return res.status(200).json({ success: true, updated: data });
-  }
-
-  if (req.method === 'PATCH') {
-    if (req.body.newStructure) {
-      // Dangerous operation: Replace entire structure
-      store = req.body.newStructure;
-      global.everwayData = store;
-      return res.status(200).json({ success: true, structureUpdated: true });
-    }
-    return res.status(400).json({ error: 'Missing newStructure payload' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }
