@@ -1,63 +1,54 @@
-// everway_api_handler.js
 
-const dataStore = {
-  personas: [],
-  problems: [],
-  solutions: [],
-  environments: [],
-  products: [],
-  jobstobedone: [],
-  solutionpemd: [],
-  behaviors: [],
-  years: [],
-  quarters: [],
-  months: [],
-  motivators: [],
-  insights: [],
-  relationships: []
-};
+// everway-api/api/everway.js
 
-let idCounter = 1;
+export default async function handler(req, res) {
+  const allowedMethods = ['GET', 'POST', 'PUT', 'PATCH'];
+  if (!allowedMethods.includes(req.method)) {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-function getNextId() {
-  return idCounter++;
-}
-
-function createHandler(type) {
-  return (req, res) => {
-    if (req.method === 'GET') {
-      res.status(200).json(dataStore[type]);
-    } else if (req.method === 'POST') {
-      const item = req.body;
-      item.id = getNextId();
-      if (type === 'insights' && !item.name && item.description) {
-        item.name = item.description.split(' ').slice(0, 5).join(' ');
-      }
-      dataStore[type].push(item);
-      res.status(201).json(item);
-    } else if (req.method === 'PUT') {
-      const item = req.body;
-      const index = dataStore[type].findIndex(i => i.id === item.id);
-      if (index !== -1) {
-        dataStore[type][index] = item;
-        res.status(200).json(item);
-      } else {
-        res.status(404).json({ error: 'Item not found' });
-      }
-    } else if (req.method === 'DELETE') {
-      const { id } = req.query;
-      const index = dataStore[type].findIndex(i => i.id == id);
-      if (index !== -1) {
-        dataStore[type].splice(index, 1);
-        res.status(204).end();
-      } else {
-        res.status(404).json({ error: 'Item not found' });
-      }
-    } else {
-      res.status(405).json({ error: 'Method not allowed' });
-    }
+  // Simulated in-memory store (replace with DB or file write in production)
+  let store = global.everwayData || {
+    personas: [],
+    problems: [],
+    solutions: [],
+    environments: [],
+    products: [],
+    relationships: []
   };
+
+  if (req.method === 'GET') {
+    return res.status(200).json(store);
+  }
+
+  const { type, data } = req.body;
+  if (!type || !store[type]) {
+    return res.status(400).json({ error: 'Invalid or missing type' });
+  }
+
+  if (req.method === 'POST') {
+    store[type].push(data);
+    global.everwayData = store;
+    return res.status(201).json({ success: true, added: data });
+  }
+
+  if (req.method === 'PUT') {
+    const index = store[type].findIndex(item => item.id === data.id);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    store[type][index] = data;
+    global.everwayData = store;
+    return res.status(200).json({ success: true, updated: data });
+  }
+
+  if (req.method === 'PATCH') {
+    if (req.body.newStructure) {
+      // Dangerous operation: Replace entire structure
+      store = req.body.newStructure;
+      global.everwayData = store;
+      return res.status(200).json({ success: true, structureUpdated: true });
+    }
+    return res.status(400).json({ error: 'Missing newStructure payload' });
+  }
 }
-
-module.exports = createHandler;
-
