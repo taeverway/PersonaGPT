@@ -22,9 +22,10 @@ export default async function handler(req, res) {
       if (error) throw error;
       res.status(200).json(data);
     } else if (req.method === 'POST') {
-      const { data, error } = await supabase.from(table).insert([req.body]).select();
+      const payload = Array.isArray(req.body) ? req.body : [req.body];
+      const { data, error } = await supabase.from(table).insert(payload).select();
       if (error) throw error;
-      res.status(201).json(data[0]);
+      res.status(201).json(data);
     } else if (req.method === 'PUT') {
       const { id, ...updateFields } = req.body;
       const { data, error } = await supabase.from(table).update(updateFields).eq('id', id).select();
