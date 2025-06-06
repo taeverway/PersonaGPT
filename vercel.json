@@ -1,0 +1,10 @@
+
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/everway.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/everway", "dest": "/api/everway.js" }
+  ]
+}
