@@ -5,6 +5,6 @@
     { "src": "api/everwaypersonas.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/api/everwaypersonas", "dest": "/api/everwaypersonas.js" }
+    { "src": "/everwaypersonas", "dest": "/everwaypersonas.js" }
   ]
 }
