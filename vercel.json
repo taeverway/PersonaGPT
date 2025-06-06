@@ -2,9 +2,9 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/everway.js", "use": "@vercel/node" }
+    { "src": "api/everwaypersonas.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/api/everway", "dest": "/api/everway.js" }
+    { "src": "/api/everwaypersonas", "dest": "/api/everwaypersonas.js" }
   ]
 }
