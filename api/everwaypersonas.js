@@ -1,4 +1,4 @@
-// everway_supabase_handler_debug.js
+// everway_supabase_handler_verbose.js
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -22,11 +22,10 @@ export default async function handler(req, res) {
       if (error) throw error;
       res.status(200).json(data);
     } else if (req.method === 'POST') {
-      console.log("POST payload:", req.body);
       const payload = Array.isArray(req.body) ? req.body : [req.body];
       const { data, error } = await supabase.from(table).insert(payload).select();
       if (error) throw error;
-      res.status(201).json(data);
+      res.status(201).json({ message: 'Inserted successfully', data });
     } else if (req.method === 'PUT') {
       const { id, ...updateFields } = req.body;
       const { data, error } = await supabase.from(table).update(updateFields).eq('id', id).select();
@@ -41,7 +40,11 @@ export default async function handler(req, res) {
       res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (err) {
-    console.error("Error occurred:", err);
-    res.status(500).json({ error: err.message, stack: err.stack });
+    res.status(500).json({
+      error: err.message,
+      payload: req.body,
+      structure: table,
+      stack: err.stack
+    });
   }
 }
